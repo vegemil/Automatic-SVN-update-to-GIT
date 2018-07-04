@@ -4,7 +4,6 @@
 #include <windows.h>
 #include <stringapiset.h>
 
-std::string repositoryPath = " D:/MOMAKaKao/trunk";
 const int MAX_LENGTH = 300;
 
 struct logInfo
@@ -36,11 +35,32 @@ std::string getCommandResult(std::string &command)
 	return xml;
 }
 
+std::string getCommandResult(std::wstring& command)
+{
+	FILE* file;
+	char output[MAX_LENGTH];
+	std::string xml;
+
+	file = _wpopen(command.c_str(), L"r");
+	if (file == NULL)
+	{
+		perror("erro : ");
+		exit(0);
+	}
+
+	while (fgets(output, MAX_LENGTH, file) != NULL)
+	{
+		printf("%s", output);
+		xml.append(output);
+		xml.pop_back();
+	}
+
+	return xml;
+}
+
 std::string getCurrentRevision()
 {
 	std::string command = "svn info --show-item last-changed-revision";
-	command.append(repositoryPath);
-
 	return getCommandResult(command);
 }
 
@@ -48,8 +68,7 @@ void getLogList(std::string currentRevision, std::string& xml)
 {
 	std::string command = "svn log --xml -r ";
 	command.append(currentRevision);
- 	command.append(":HEAD ");
- 	command.append(repositoryPath);
+	command.append(":HEAD ");
 
 	xml = getCommandResult(command);
 }
@@ -61,21 +80,11 @@ void getRevisionList(std::string& xml, std::vector<logInfo>& revisionList)
 
 	doc.Print();
 
-// 	tinyxml2::XMLElement* root = doc.FirstChildElement("log");
-// 	if (nullptr != root)
-// 	{
-// 		tinyxml2::XMLElement* child1 = root->FirstChildElement("logentry");
-// 		if (nullptr != child1)
-// 		{
-// 			
-// 		}
-// 	}
-
 	tinyxml2::XMLElement *levelElement = doc.FirstChildElement("log")->FirstChildElement("logentry")->NextSiblingElement();
 	for (tinyxml2::XMLElement* child = levelElement; child != NULL; child = child->NextSiblingElement())
 	{
 		logInfo log;
-		
+
 		std::string revision = child->Attribute("revision");
 		log.revision = revision;
 
@@ -93,9 +102,6 @@ void getRevisionList(std::string& xml, std::vector<logInfo>& revisionList)
 			log.msg = msg;
 		}
 
-// 		setlocale(LC_ALL, "");
-// 		std::wcout << "revision : " << log.revision.c_str() << ", msg : " << log.msg.c_str() << std::endl;
-
 		revisionList.push_back(log);
 	}
 }
@@ -105,12 +111,12 @@ void svnUpdateAndGitCommit(std::vector<logInfo>& revisionList)
 	for (auto revision : revisionList)
 	{
 		// svn update
-		std::string command = "svn update - r";
+		std::string command = "svn update -r";
 		command.append(revision.revision);
 		getCommandResult(command);
 
 		// checkout branch
-		command = "svn checkout -b develop";
+		command = "git checkout develop";
 		getCommandResult(command);
 
 		// git add
@@ -118,30 +124,29 @@ void svnUpdateAndGitCommit(std::vector<logInfo>& revisionList)
 		getCommandResult(command);
 
 		// git commit
-
+		std::wstring Wcommand = L"git commit -am \"";
+		Wcommand.append(revision.msg);
+		Wcommand.append(L"\"");
+		getCommandResult(Wcommand);
 	}
 }
 
 int main(void)
 {
-	// «—±€ º¬∆√
-	std::string option = "chcp 65001";
-	getCommandResult(option);
-
-	// «ˆ¿Á ∏Æ∫Ò¿¸ ∞Æ∞Ìø¿±‚
+	// ÌòÑÏû¨ Î¶¨ÎπÑÏ†Ñ Í∞ñÍ≥†Ïò§Í∏∞
 	std::string currentRevision;
 	currentRevision = getCurrentRevision();
 
-	// ∑Œ±◊ ∏ÆΩ∫∆Æ ∞Æ∞Ìø¿±‚
+	// Î°úÍ∑∏ Î¶¨Ïä§Ìä∏ Í∞ñÍ≥†Ïò§Í∏∞
 	std::string xml;
 	getLogList(currentRevision, xml);
 
-	// ∏Æ∫Ò¿¸ ∏ÆΩ∫∆Æ ∞Æ∞Ì ø¿±‚
+	// Î¶¨ÎπÑÏ†Ñ Î¶¨Ïä§Ìä∏ Í∞ñÍ≥† Ïò§Í∏∞
 	std::vector<logInfo> revisionList;
 	getRevisionList(xml, revisionList);
 
-	//æ˜µ•¿Ã∆Æ & ƒøπ‘
+	//ÏóÖÎç∞Ïù¥Ìä∏ & Ïª§Î∞ã
+	svnUpdateAndGitCommit(revisionList);
 
-
-	return 0; 
+	return 0;
 }
