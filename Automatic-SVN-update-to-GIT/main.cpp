@@ -131,8 +131,23 @@ void svnUpdateAndGitCommit(std::vector<logInfo>& revisionList)
 	}
 }
 
+void currentModifiedStach()
+{
+	std::string command = "git stash";
+	getCommandResult(command);
+}
+
+void currentModifiedPop()
+{
+	std::string command = "git stash apply";
+	getCommandResult(command);
+}
+
 int main(void)
 {
+	// 현재 상태 stash 하기
+	currentModifiedStach();
+
 	// 현재 리비전 갖고오기
 	std::string currentRevision;
 	currentRevision = getCurrentRevision();
@@ -147,6 +162,9 @@ int main(void)
 
 	//업데이트 & 커밋
 	svnUpdateAndGitCommit(revisionList);
+
+	// stash 한 아이들 popd
+	currentModifiedPop();
 
 	return 0;
 }
