@@ -54,6 +54,9 @@ std::string getCommandResult(std::wstring& command)
 		xml.append(output);
 		xml.pop_back();
 	}
+	
+	_pclose(file);
+	delete[] file;
 
 	return xml;
 }
