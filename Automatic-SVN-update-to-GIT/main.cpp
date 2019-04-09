@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include "tinyxml2.h"
 #include <windows.h>
@@ -111,15 +111,15 @@ void getRevisionList(std::string& xml, std::vector<logInfo>& revisionList)
 
 void svnUpdateAndGitCommit(std::vector<logInfo>& revisionList)
 {
+	// checkout branch
+	std::string command = "git checkout develop";
+	getCommandResult(command);
+
 	for (auto revision : revisionList)
 	{
 		// svn update
-		std::string command = "svn update -r";
+		command = "svn update -r";
 		command.append(revision.revision);
-		getCommandResult(command);
-
-		// checkout branch
-		command = "git checkout develop";
 		getCommandResult(command);
 
 		// git add
